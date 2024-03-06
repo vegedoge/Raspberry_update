@@ -177,7 +177,7 @@ class main_task(object):
                     
             # elif to make sure detection won't happen while the drawer is open
             # every 3600 sec, run inference once    
-            elif loop_time > 60 and list(reed_history) == [0, 0]:
+            elif loop_time > 3600 and list(reed_history) == [0, 0]:
                 loop_time = 0
                 self.bt_instance.block = 1
                 # run inference & transmission
