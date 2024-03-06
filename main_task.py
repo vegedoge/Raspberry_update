@@ -23,6 +23,7 @@ import csv
 from datetime import datetime
 import json
 from collections import deque
+import shutil
 
 # own modules
 import enose
@@ -50,7 +51,11 @@ class main_task(object):
         #create dir
         if not os.path.exists(WORK_DIR_f):
             os.mkdir(WORK_DIR_f)
-        
+            
+        # initialize work folder, preventing time conflict
+        self.init_folder("/home/pi/ffd_demo/ffd-logging")
+        self.init_pic_folder("/home/pi/ffd_demo/ffd_picture")
+            
         self.date = time.strftime('%Y-%m-%d',time.localtime(time.time()))
         #create child dir
         self.WORK_DIR_c = WORK_DIR_f + self.device_name + '-' +self.date + '/'
@@ -172,7 +177,7 @@ class main_task(object):
                     
             # elif to make sure detection won't happen while the drawer is open
             # every 3600 sec, run inference once    
-            elif loop_time > 3600 and list(reed_history) == [0, 0]:
+            elif loop_time > 60 and list(reed_history) == [0, 0]:
                 loop_time = 0
                 self.bt_instance.block = 1
                 # run inference & transmission
@@ -195,8 +200,8 @@ class main_task(object):
                     self.bt_instance.block = 0
                     print("local task: proecssing failed")
                 
-                print(f"local task: sleeping {duration} seconds")   
-                time.sleep(duration)
+                # print(f"local task: sleeping {duration} seconds")   
+                # time.sleep(duration)
             # refresh if received message
             elif self.event.is_set():
                 self.bt_instance.block = 1
@@ -421,6 +426,32 @@ class main_task(object):
             lines = file.readlines()
         with open(csv_file, 'w') as file:
             file.writelines(lines[:1] + lines[num_rows_to_delete + 1:])
+       
+    def init_folder(self, folder_path):
+        '''
+        Every time when booted, clear all old data files
+        in case time module goes back to certain point and cause
+        mismatch of data and time
+        '''
+        # get all contents of one folder
+        files = os.listdir(folder_path)
+        # clear all subfolers and anything inside
+        for file in files:
+            file_path = os.path.join(folder_path, file)
+            shutil.rmtree(file_path)
+            
+    def init_pic_folder(self, folder_path):
+        '''
+        Every time when booted, clear all old pic files
+        in case time module goes back to certain point and cause
+        mismatch of data and time
+        '''
+        # get all contents of one folder
+        files = os.listdir(folder_path)
+        # clear all pic files inside
+        for file in files:
+            file_path = os.path.join(folder_path, file)
+            os.remove(file_path)
         
     def led_process_control(self, control_bit = "0000"):
         '''multiprocess initialization for sudo LED control'''
